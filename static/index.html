@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algo Trading Hustler</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #1976d2;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        select, button, input {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .dark-mode {
+            background-color: #1c1c1c;
+            color: #e0e0e0;
+        }
+        .dark-mode .chart-container {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            border: 1px solid #3d3d3d;
+        }
+        .dark-mode .chart-title {
+            color: #e0e0e0;
+        }
+        .dark-mode select, .dark-mode input {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+            border-color: #4d4d4d;
+        }
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .indicator-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background-color: #e0e0e0;
+            color: #333;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .dark-mode .indicator-badge {
+            background-color: #4d4d4d;
+            color: #e0e0e0;
+        }
+        .strategy-panel {
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .dark-mode .strategy-panel {
+            background-color: #2d2d2d;
+            border: 1px solid #3d3d3d;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-row > div {
+            flex: 1;
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            background-color: #4caf50;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+        .notification.error {
+            background-color: #f44336;
+        }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-size: 24px;
+        }
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1976d2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 2px solid #1976d2;
+            font-weight: 600;
+        }
+        .dark-mode .tabs {
+            border-bottom: 1px solid #3d3d3d;
+        }
+        .dark-mode .tab.active {
+            border-bottom: 2px solid #90caf9;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Algo Trading Hustler</h1>
+        <div class="controls">
+            <select id="symbol-select">
+                <option value="MSFT">MSFT</option>
+                <option value="AAPL">AAPL</option>
+                <option value="GOOGL">GOOGL</option>
+                <option value="AMZN">AMZN</option>
+                <option value="TSLA">TSLA</option>
+            </select>
+            <select id="interval-select">
+                <option value="1min">1 Minute</option>
+                <option value="5min" selected>5 Minutes</option>
+                <option value="15min">15 Minutes</option>
+                <option value="30min">30 Minutes</option>
+                <option value="60min">1 Hour</option>
+            </select>
+            <button id="refresh-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                </svg>
+                Refresh
+            </button>
+            <button id="theme-toggle" class="theme-toggle">🌙</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="dashboard">Dashboard</div>
+                <div class="tab" data-tab="technical">Technical Analysis</div>
+                <div class="tab" data-tab="strategy">Strategy</div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard-tab">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <span>Price & Volume</span>
+                        <div class="indicator-badges">
+                            <span class="indicator-badge">SMA(20)</span>
+                            <span class="indicator-badge">EMA(50)</span>
+                        </div>
+                    </div>
+                    <div class="toolbar">
+                        <button id="zoom-in-btn">Zoom In</button>
+                        <button id="zoom-out-btn">Zoom Out</button>
+                        <button id="reset-zoom-btn">Reset Zoom</button>
+                    </div>
+                    <canvas id="price-chart"></canvas>
+                </div>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">RSI (14)</div>
+                        <canvas id="rsi-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">MACD</div>
+                        <canvas id="macd-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Technical Analysis Tab -->
+            <div class="tab-content" id="technical-tab">
+                <div class="chart-container">
+                    <div class="chart-title">Bollinger Bands</div>
+                    <canvas id="bollinger-chart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Stochastic Oscillator</div>
+                    <canvas id="stochastic-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Strategy Tab -->
+            <div class="tab-content" id="strategy-tab">
+                <div class="strategy-panel">
+                    <h2>Trading Strategy Configuration</h2>
+                    <div class="form-group">
+                        <label for="strategy-select">Strategy</label>
+                        <select id="strategy-select">
+                            <option value="sma_crossover">SMA Crossover</option>
+                            <option value="rsi_oversold">RSI Oversold</option>
+                            <option value="macd_signal">MACD Signal Cross</option>
+                            <option value="bollinger_bounce">Bollinger Band Bounce</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fast-period">Fast Period</label>
+                            <input type="number" id="fast-period" value="9" min="1" max="50">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="slow-period">Slow Period</label>
+                            <input type="number" id="slow-period" value="21" min="1" max="200">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rsi-threshold">RSI Threshold</label>
+                            <input type="number" id="rsi-threshold" value="30" min="1" max="99">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stop-loss">Stop Loss (%)</label>
+                            <input type="number" id="stop-loss" value="2" min="0.1" max="20" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="take-profit">Take Profit (%)</label>
+                        <input type="number" id="take-profit" value="5" min="0.1" max="50" step="0.1">
+                    </div>
+                    
+                    <button id="apply-strategy-btn">Apply Strategy</button>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Strategy Performance</div>
+                    <p>Select and apply a strategy to see performance metrics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    <div class="loading" id="loading" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
+        // Notification function
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification' + (isError ? ' error' : '');
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        // Loading indicator
+        function showLoading(show = true) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        // Charts
+        let priceChart, rsiChart, macdChart, bollingerChart, stochasticChart;
+        
+        // Fetch data function
+        async function fetchData(symbol, interval = '5min') {
+            try {
+                showLoading(true);
+                // Use 127.0.0.1 instead of localhost
+                const response = await fetch(`http://127.0.0.1:8000/api/stock/${symbol}?interval=${interval}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                const timestamps = data.data.map(d => {
+                    const date = new Date(d.timestamp);
+                    return date.toLocaleTimeString();
+                });
+                const prices = data.data.map(d => d.close);
+                const volumes = data.data.map(d => d.volume);
+                
+                // Update price chart
+                priceChart.data.labels = timestamps;
+                priceChart.data.datasets[0].data = prices;
+                priceChart.data.datasets[1].data = volumes;
+                priceChart.update();
+                
+                // Update RSI chart
+                rsiChart.data.labels = timestamps;
+                rsiChart.data.datasets[0].data = data.indicators.RSI;
+                rsiChart.update();
+                
+                // Update MACD chart
+                macdChart.data.labels = timestamps;
+                macdChart.data.datasets[0].data = data.indicators.MACD.MACD;
+                macdChart.data.datasets[1].data = data.indicators.MACD.Signal;
+                macdChart.data.datasets[2].data = data.indicators.MACD.Histogram;
+                macdChart.update();
+                
+                // Update Bollinger Bands chart
+                bollingerChart.data.labels = timestamps;
+                bollingerChart.data.datasets[0].data = prices;
+                bollingerChart.data.datasets[1].data = data.indicators.BollingerBands.Upper;
+                bollingerChart.data.datasets[2].data = data.indicators.BollingerBands.Middle;
+                bollingerChart.data.datasets[3].data = data.indicators.BollingerBands.Lower;
+                bollingerChart.update();
+                
+                // Update Stochastic chart
+                stochasticChart.data.labels = timestamps;
+                stochasticChart.data.datasets[0].data = data.indicators.Stochastic.K;
+                stochasticChart.data.datasets[1].data = data.indicators.Stochastic.D;
+                stochasticChart.update();
+                
+                showNotification(`Data updated for ${symbol}`);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showNotification(`Error fetching data: ${error.message}. Make sure the backend server is running.`, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Initialize charts
+        function initCharts() {
+            Chart.defaults.color = document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#666';
+            
+            // Price & Volume Chart
+            const priceCtx = document.getElementById('price-chart').getContext('2d');
+            priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Price',
+                            data: [],
+                            borderColor: '#4e79a7',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            yAxisID: 'price'
+                        },
+                        {
+                            label: 'Volume',
+                            data: [],
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return null;
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(89, 161, 79, 0.5)');
+                                gradient.addColorStop(1, 'rgba(89, 161, 79, 0.1)');
+                                return gradient;
+                            },
+                            type: 'bar',
+                            yAxisID: 'volume'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'xy'
+                            },
+                            pan: { enabled: true }
+                        },
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        price: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Price' },
+                            grid: {
+                                color: document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        volume: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { display: false },
+                            title: { display: true, text: 'Volume' }
+                        }
+                    }
+                }
+            });
+            
+            // RSI Chart
+            const rsiCtx = document.getElementById('rsi-chart').getContext('2d');
+            rsiChart = new Chart(rsiCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'RSI',
+                        data: [],
+                        borderColor: '#e15759',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                line70: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: 'rgb(255, 99, 132)',
+                                    borderWidth: 1,
+                                    borderDash: [5, 5]
+                                },
+                                line30: {
+                                    type: 'line',
+                                    yMin: 30,
+                                    yMax: 30,
+                                    borderColor: 'rgb(75, 192, 192)',
+                                    borderWidth: 1,
+                                    borderDash: [5, 5]
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // MACD Chart
+            const macdCtx = document.getElementById('macd-chart').getContext('2d');
+            macdChart = new Chart(macdCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'MACD',
+                            data: [],
+                            borderColor: '#76b7b2',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            type: 'line'
+                        },
+                        {
+                            label: 'Signal',
+                            data: [],
+                            borderColor: '#f28e2b',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            type: 'line'
+                        },
+                        {
+                            label: 'Histogram',
+                            data: [],
+                            backgroundColor: (context) => {
+                                const value = context.raw;
+                                return value >= 0 ? 'rgba(75, 192, 192, 0.5)' : 'rgba(255, 99, 132, 0.5)';
+                            },
+                            type: 'bar'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            grid: {
+                                color: document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Bollinger Bands Chart
+            const bollingerCtx = document.getElementById('bollinger-chart').getContext('2d');
+            bollingerChart = new Chart(bollingerCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Price',
+                            data: [],
+                            borderColor: '#4e79a7',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            type: 'line'
+                        },
+                        {
+                            label: 'Upper Band',
+                            data: [],
+                            borderColor: 'rgba(255, 99, 132, 0.8)',
+                            borderWidth: 1,
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            fill: false,
+                            pointRadius: 0,
+                            type: 'line'
+                        },
+                        {
+                            label: 'Middle Band',
+                            data: [],
+                            borderColor: 'rgba(54, 162, 235, 0.8)',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            type: 'line'
+                        },
+                        {
+                            label: 'Lower Band',
+                            data: [],
+                            borderColor: 'rgba(75, 192, 192, 0.8)',
+                            borderWidth: 1,
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            fill: false,
+                            pointRadius: 0,
+                            type: 'line'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            grid: {
+                                color: document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Stochastic Chart
+            const stochasticCtx = document.getElementById('stochastic-chart').getContext('2d');
+            stochasticChart = new Chart(stochasticCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '%K',
+                            data: [],
+                            borderColor: '#af7aa1',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '%D',
+                            data: [],
+                            borderColor: '#ff9da7',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('symbol-select').addEventListener('change', (e) => {
+            const symbol = e.target.value;
+            const interval = document.getElementById('interval-select').value;
+            fetchData(symbol, interval);
+        });
+        
+        document.getElementById('interval-select').addEventListener('change', (e) => {
+            const interval = e.target.value;
+            const symbol = document.getElementById('symbol-select').value;
+            fetchData(symbol, interval);
+        });
+        
+        document.getElementById('refresh-btn').addEventListener('click', () => {
+            const symbol = document.getElementById('symbol-select').value;
+            const interval = document.getElementById('interval-select').value;
+            fetchData(symbol, interval);
+        });
+        
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            priceChart.zoom(1.1);
+        });
+        
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            priceChart.zoom(0.9);
+        });
+        
+        document.getElementById('reset-zoom-btn').addEventListener('click', () => {
+            priceChart.resetZoom();
+        });
+        
+        document.getElementById('apply-strategy-btn').addEventListener('click', () => {
+            const strategy = document.getElementById('strategy-select').value;
+            const fastPeriod = document.getElementById('fast-period').value;
+            const slowPeriod = document.getElementById('slow-period').value;
+            const rsiThreshold = document.getElementById('rsi-threshold').value;
+            const stopLoss = document.getElementById('stop-loss').value;
+            const takeProfit = document.getElementById('take-profit').value;
+            
+            showNotification(`Applied ${strategy} strategy with parameters: Fast Period=${fastPeriod}, Slow Period=${slowPeriod}`);
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            fetchData('MSFT', '5min');
+        });
+    </script>
+</body>
+</html>
