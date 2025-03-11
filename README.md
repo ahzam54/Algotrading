@@ -4,7 +4,7 @@ A professional algorithmic trading dashboard with real-time stock data, technica
 
 ## Features
 
-- **Real-time Stock Data**: Fetches intraday stock data from Alpha Vantage API
+- **Real-time Stock Data**: Fetches intraday stock data from Yahoo finance
 - **Technical Indicators**: 
   - RSI (Relative Strength Index)
   - MACD (Moving Average Convergence Divergence)
@@ -20,7 +20,7 @@ A professional algorithmic trading dashboard with real-time stock data, technica
 ### Prerequisites
 
 - Python 3.7+
-- Alpha Vantage API Key (stored in `.env` file)
+
 
 ### Installation
 
@@ -87,7 +87,7 @@ For a more advanced experience with the React frontend:
 ## Troubleshooting
 
 - **Port already in use**: The server will automatically try ports 8000-8010 if the default port is in use
-- **API Key issues**: Ensure your Alpha Vantage API key is correctly set in the `.env` file
+
 - **Connection errors**: Check that both the backend server and frontend (if using React) are running
 
 ## License
